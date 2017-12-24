@@ -448,7 +448,7 @@
           },
           {
             id: 'wfs',
-            title: 'WFS',
+            title: 'WFS in Toronto',
             cmp: 'vl-layer-vector',
             visible: false,
             source: {
