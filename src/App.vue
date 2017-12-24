@@ -446,6 +446,25 @@
               },
             ],
           },
+          {
+            id: 'wfs',
+            title: 'WFS',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              features: [],
+              url (extent, resolution, projection) {
+                return 'https://ahocevar.com/geoserver/wfs?service=WFS&' +
+                  'version=1.1.0&request=GetFeature&typename=osm:water_areas&' +
+                  'outputFormat=application/json&srsname=' + projection + '&' +
+                  'bbox=' + extent.join(',') + ',' + projection
+              },
+              strategyFactory () {
+                return vlCore.loadStrategyHelper.bbox
+              },
+            },
+          },
         ],
       }
     },

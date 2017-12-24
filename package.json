@@ -19,7 +19,7 @@
     "json-loader": "^0.5.7",
     "lodash": "^4.17.4",
     "vue": "^2.5.2",
-    "vuelayers": "^0.7.4"
+    "vuelayers": "^0.7.5"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",
