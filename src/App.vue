@@ -1,4 +1,4 @@
-<template>
+<template xmlns:>
   <div id="app" :class="[$options.name]">
     <!-- app map -->
     <vl-map class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
@@ -62,7 +62,7 @@
       <!--// interactions -->
 
       <!-- geolocation -->
-      <vl-geoloc @update:position="onUpdatePosition">
+      <vl-geoloc @update:position="onUpdatePosition" projection="EPSG:3857">
         <template slot-scope="geoloc">
           <vl-feature v-if="geoloc.position" id="position-feature">
             <vl-geom-point :coordinates="geoloc.position"></vl-geom-point>
@@ -187,6 +187,19 @@
   // import VueLayers core helpers
   import { core as vlCore } from 'vuelayers'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
+
+  // Custom projection for static Image layer
+  let x = 1024 * 10000
+  let y = 968 * 10000
+  let imageExtent = [-x / 2, -y / 2, x / 2, y / 2]
+  let customProj = vlCore.projHelper.create({
+    code: 'xkcd-image',
+    units: 'pixels',
+    extent: imageExtent,
+  })
+  // add to the list of known projections
+  // after that it can be used by code
+  vlCore.projHelper.add(customProj)
 
   const methods = {
     pointOnSurface: vlCore.geomHelper.pointOnSurface,
@@ -337,7 +350,12 @@
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              staticFeatures: pacmanFeaturesCollection.features,
+              staticFeatures: pacmanFeaturesCollection.features.map(feature => {
+                // transform coordinates from EPSG:4326 to the view projection
+                let { fromLonLat } = vlCore.projHelper.transforms[feature.geometry.type]
+                feature.geometry.coordinates = fromLonLat(feature.geometry.coordinates)
+                return feature
+              }),
             },
             style: [
               {
@@ -425,8 +443,11 @@
                 cmp: 'vl-source-vector',
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
-                features: range(0, 20000).map(i => {
-                  let coordinate = [random(-50, 50), random(-50, 50)]
+                features: range(0, 10000).map(i => {
+                  let coordinate = vlCore.projHelper.fromLonLat([
+                    random(-50, 50),
+                    random(-50, 50),
+                  ])
 
                   return {
                     type: 'Feature',
@@ -448,7 +469,7 @@
           },
           {
             id: 'wfs',
-            title: 'WFS',
+            title: 'WFS (Canada water areas)',
             cmp: 'vl-layer-vector',
             visible: false,
             source: {
@@ -463,6 +484,19 @@
               strategyFactory () {
                 return vlCore.loadStrategyHelper.bbox
               },
+            },
+          },
+          {
+            id: 'static-image',
+            title: 'Static Image with custom projection',
+            cmp: 'vl-layer-image',
+            visible: false,
+            source: {
+              cmp: 'vl-source-image-static',
+              projection: customProj.getCode(),
+              url: 'https://imgs.xkcd.com/comics/online_communities.png',
+              size: [1024, 968],
+              extent: imageExtent,
             },
           },
         ],

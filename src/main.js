@@ -12,7 +12,10 @@ Vue.use(Buefy, {
   defaultIconPack: 'fa',
 })
 // register all VueLayers components
-Vue.use(VueLayers)
+Vue.use(VueLayers, {
+  // returns old behavior like in < v0.9
+  // bindToProj: 'EPSG:4326',
+})
 
 /* eslint-disable no-new */
 new Vue({
