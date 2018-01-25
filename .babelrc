@@ -7,6 +7,9 @@
   ],
   "plugins": ["transform-runtime"],
   "env": {
+    "production": {
+      "presets": ["minify"]
+    },
     "test": {
       "presets": ["env", "stage-2"],
       "plugins": ["transform-es2015-modules-commonjs", "dynamic-import-node"]
