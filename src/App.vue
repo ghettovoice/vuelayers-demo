@@ -183,26 +183,27 @@
 </template>
 
 <script>
-  import { kebabCase, range, random } from 'lodash/fp'
-  // import VueLayers core helpers
-  import { core as vlCore } from 'vuelayers'
+  import { kebabCase, range, random } from 'lodash'
+  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, transforms, loadingBBox, pointFromLonLat } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
 
   // Custom projection for static Image layer
   let x = 1024 * 10000
   let y = 968 * 10000
   let imageExtent = [-x / 2, -y / 2, x / 2, y / 2]
-  let customProj = vlCore.projHelper.create({
+  let customProj = createProj({
     code: 'xkcd-image',
     units: 'pixels',
     extent: imageExtent,
   })
   // add to the list of known projections
   // after that it can be used by code
-  vlCore.projHelper.add(customProj)
+  addProj(customProj)
+
+  const easeInOut = t => 1 - Math.pow(1 - t, 3)
 
   const methods = {
-    pointOnSurface: vlCore.geomHelper.pointOnSurface,
+    pointOnSurface: findPointOnSurface,
     geometryTypeToCmpName (type) {
       return 'vl-geom-' + kebabCase(type)
     },
@@ -212,28 +213,28 @@
      */
     pacmanStyleFunc () {
       const pacman = [
-        vlCore.styleHelper.style({
+        createStyle({
           strokeColor: '#de9147',
           strokeWidth: 3,
           fillColor: [222, 189, 36, 0.8],
         }),
       ]
       const path = [
-        vlCore.styleHelper.style({
+        createStyle({
           strokeColor: 'blue',
           strokeWidth: 1,
         }),
-        vlCore.styleHelper.style({
+        createStyle({
           imageRadius: 5,
           imageFillColor: 'orange',
           geom (feature) {
             // geometry is an LineString, convert it to MultiPoint to style vertex
-            return vlCore.geomHelper.multiPoint(feature.getGeometry().getCoordinates())
+            return createMultiPoint(feature.getGeometry().getCoordinates())
           },
         }),
       ]
       const eye = [
-        vlCore.styleHelper.style({
+        createStyle({
           imageRadius: 6,
           imageFillColor: '#444444',
         }),
@@ -262,7 +263,7 @@
         let style = cache[size]
 
         if (!style) {
-          style = vlCore.styleHelper.style({
+          style = createStyle({
             imageRadius: 10,
             strokeColor: '#fff',
             fillColor: '#3399cc',
@@ -290,11 +291,11 @@
       const duration = feature.get('duration')
       const elapsed = frameState.time - feature.get('start')
       const elapsedRatio = elapsed / duration
-      const radius = vlCore.easingHelper.easeOut(elapsedRatio) * 35 + 5
-      const opacity = vlCore.easingHelper.easeOut(1 - elapsedRatio)
-      const fillOpacity = vlCore.easingHelper.easeOut(0.5 - elapsedRatio)
+      const radius = easeInOut(elapsedRatio) * 35 + 5
+      const opacity = easeInOut(1 - elapsedRatio)
+      const fillOpacity = easeInOut(0.5 - elapsedRatio)
 
-      vectorContext.setStyle(vlCore.styleHelper.style({
+      vectorContext.setStyle(createStyle({
         imageRadius: radius,
         fillColor: [119, 170, 203, fillOpacity],
         strokeColor: [119, 170, 203, opacity],
@@ -352,7 +353,7 @@
               cmp: 'vl-source-vector',
               staticFeatures: pacmanFeaturesCollection.features.map(feature => {
                 // transform coordinates from EPSG:4326 to the view projection
-                let { fromLonLat } = vlCore.projHelper.transforms[feature.geometry.type]
+                let { fromLonLat } = transforms[feature.geometry.type]
                 feature.geometry.coordinates = fromLonLat(feature.geometry.coordinates)
                 return feature
               }),
@@ -444,7 +445,7 @@
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
                 features: range(0, 10000).map(i => {
-                  let coordinate = vlCore.projHelper.fromLonLat([
+                  let coordinate = pointFromLonLat([
                     random(-50, 50),
                     random(-50, 50),
                   ])
@@ -482,7 +483,7 @@
                   'bbox=' + extent.join(',') + ',' + projection
               },
               strategyFactory () {
-                return vlCore.loadStrategyHelper.bbox
+                return loadingBBox
               },
             },
           },
