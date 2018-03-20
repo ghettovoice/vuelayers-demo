@@ -91,6 +91,13 @@
       </vl-feature>
       <!--// overlay marker -->
 
+
+      <!-- circle geom -->
+      <vl-feature id="circle">
+        <vl-geom-circle :radius="1000000" :coordinates="[0, 100000000]"></vl-geom-circle>
+      </vl-feature>
+      <!--// circle geom -->
+
       <!-- base layer -->
       <vl-layer-tile id="sputnik">
         <vl-source-sputnik></vl-source-sputnik>
@@ -104,7 +111,7 @@
           <vl-feature v-if="layer.source.staticFeatures && layer.source.staticFeatures.length"
                       v-for="feature in layer.source.staticFeatures" :key="feature.id"
                       :id="feature.id" :properties="feature.properties">
-            <component :is="geometryTypeToCmpName(feature.geometry.type)" :coordinates="feature.geometry.coordinates"></component>
+            <component :is="geometryTypeToCmpName(feature.geometry.type)" v-bind="feature.geometry"></component>
           </vl-feature>
 
           <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
@@ -113,7 +120,7 @@
             <vl-feature v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length"
                         v-for="feature in layer.source.source.staticFeatures" :key="feature.id"
                         :id="feature.id" :properties="feature.properties">
-              <component :is="geometryTypeToCmpName(feature.geometry.type)" :coordinates="feature.geometry.coordinates"></component>
+              <component :is="geometryTypeToCmpName(feature.geometry.type)" v-bind="feature.geometry"></component>
             </vl-feature>
           </component>
         </component>
@@ -364,6 +371,32 @@
                 factory: this.pacmanStyleFunc,
               },
             ],
+          },
+          // Circles
+          {
+            id: 'circles',
+            title: 'Circles',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              staticFeatures: range(0, 100).map(i => {
+                let coordinate = pointFromLonLat([
+                  random(-50, 50),
+                  random(-50, 50),
+                ])
+
+                return {
+                  type: 'Feature',
+                  id: 'random-cirlce-' + i,
+                  geometry: {
+                    type: 'Circle',
+                    coordinates: coordinate,
+                    radius: random(Math.pow(10, 5), Math.pow(10, 6)),
+                  },
+                }
+              }),
+            },
           },
           // Countries vector layer
           // loads GeoJSON data from remote server
