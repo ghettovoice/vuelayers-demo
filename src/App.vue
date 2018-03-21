@@ -7,7 +7,7 @@
       <vl-view ref="view" :center="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
 
       <!-- interactions -->
-      <vl-interaction-select :features.sync="selectedFeatures">
+      <vl-interaction-select :features.sync="selectedFeatures" v-if="drawType == null">
         <template slot-scope="select">
           <!-- select styles -->
           <vl-style-box>
@@ -91,6 +91,13 @@
       </vl-feature>
       <!--// overlay marker -->
 
+
+      <!-- circle geom -->
+      <vl-feature id="circle">
+        <vl-geom-circle :radius="1000000" :coordinates="[0, 100000000]"></vl-geom-circle>
+      </vl-feature>
+      <!--// circle geom -->
+
       <!-- base layer -->
       <vl-layer-tile id="sputnik">
         <vl-source-sputnik></vl-source-sputnik>
@@ -104,7 +111,7 @@
           <vl-feature v-if="layer.source.staticFeatures && layer.source.staticFeatures.length"
                       v-for="feature in layer.source.staticFeatures" :key="feature.id"
                       :id="feature.id" :properties="feature.properties">
-            <component :is="geometryTypeToCmpName(feature.geometry.type)" :coordinates="feature.geometry.coordinates"></component>
+            <component :is="geometryTypeToCmpName(feature.geometry.type)" v-bind="feature.geometry"></component>
           </vl-feature>
 
           <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
@@ -113,7 +120,7 @@
             <vl-feature v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length"
                         v-for="feature in layer.source.source.staticFeatures" :key="feature.id"
                         :id="feature.id" :properties="feature.properties">
-              <component :is="geometryTypeToCmpName(feature.geometry.type)" :coordinates="feature.geometry.coordinates"></component>
+              <component :is="geometryTypeToCmpName(feature.geometry.type)" v-bind="feature.geometry"></component>
             </vl-feature>
           </component>
         </component>
@@ -132,6 +139,16 @@
         <!--// style -->
       </component>
       <!--// other layers -->
+
+      <!-- draw components -->
+      <vl-layer-vector id="draw-pane" v-if="mapPanel.tab === 'draw'">
+        <vl-source-vector ident="draw-target" :features.sync="drawnFeatures"></vl-source-vector>
+      </vl-layer-vector>
+
+      <vl-interaction-draw v-if="mapPanel.tab === 'draw' && drawType" source="draw-target" :type="drawType"></vl-interaction-draw>
+      <vl-interaction-modify v-if="mapPanel.tab === 'draw'" source="draw-target"></vl-interaction-modify>
+      <vl-interaction-snap v-if="mapPanel.tab === 'draw'" source="draw-target" :priority="10"></vl-interaction-snap>
+      <!--// draw components -->
     </vl-map>
     <!--// app map -->
 
@@ -142,6 +159,7 @@
         <p class="panel-tabs">
           <a @click="onMapPanelTabClick('state')" :class="mapPanelTabClasses('state')">State</a>
           <a @click="onMapPanelTabClick('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
+          <a @click="onMapPanelTabClick('draw')" :class="mapPanelTabClasses('draw')">Draw</a>
         </p>
 
         <div class="panel-block" v-show="mapPanel.tab === 'state'">
@@ -176,6 +194,16 @@
             {{ layer.title }}
           </b-switch>
         </div>
+
+        <div class="panel-block draw-panel" v-show="mapPanel.tab === 'draw'">
+          <div class="buttons">
+            <button v-for="control in drawControls" :key="control.type || -1" @click="drawType = control.type" 
+                    :class="drawType && drawType === control.type ? 'is-info' : ''" class="button" >
+              <b-icon :icon="control.icon"></b-icon>
+              <span>{{ control.label }}</span>
+            </button>
+          </div>
+        </div>
       </b-panel>
     </div>
     <!--// map panel, controls -->
@@ -183,26 +211,28 @@
 </template>
 
 <script>
-  import { kebabCase, range, random } from 'lodash/fp'
-  // import VueLayers core helpers
-  import { core as vlCore } from 'vuelayers'
+  import { kebabCase, range, random, camelCase } from 'lodash'
+  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, transforms, loadingBBox, pointFromLonLat } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
 
   // Custom projection for static Image layer
   let x = 1024 * 10000
   let y = 968 * 10000
   let imageExtent = [-x / 2, -y / 2, x / 2, y / 2]
-  let customProj = vlCore.projHelper.create({
+  let customProj = createProj({
     code: 'xkcd-image',
     units: 'pixels',
     extent: imageExtent,
   })
   // add to the list of known projections
   // after that it can be used by code
-  vlCore.projHelper.add(customProj)
+  addProj(customProj)
+
+  const easeInOut = t => 1 - Math.pow(1 - t, 3)
 
   const methods = {
-    pointOnSurface: vlCore.geomHelper.pointOnSurface,
+    camelCase,
+    pointOnSurface: findPointOnSurface,
     geometryTypeToCmpName (type) {
       return 'vl-geom-' + kebabCase(type)
     },
@@ -212,28 +242,28 @@
      */
     pacmanStyleFunc () {
       const pacman = [
-        vlCore.styleHelper.style({
+        createStyle({
           strokeColor: '#de9147',
           strokeWidth: 3,
           fillColor: [222, 189, 36, 0.8],
         }),
       ]
       const path = [
-        vlCore.styleHelper.style({
+        createStyle({
           strokeColor: 'blue',
           strokeWidth: 1,
         }),
-        vlCore.styleHelper.style({
+        createStyle({
           imageRadius: 5,
           imageFillColor: 'orange',
           geom (feature) {
             // geometry is an LineString, convert it to MultiPoint to style vertex
-            return vlCore.geomHelper.multiPoint(feature.getGeometry().getCoordinates())
+            return createMultiPoint(feature.getGeometry().getCoordinates())
           },
         }),
       ]
       const eye = [
-        vlCore.styleHelper.style({
+        createStyle({
           imageRadius: 6,
           imageFillColor: '#444444',
         }),
@@ -262,7 +292,7 @@
         let style = cache[size]
 
         if (!style) {
-          style = vlCore.styleHelper.style({
+          style = createStyle({
             imageRadius: 10,
             strokeColor: '#fff',
             fillColor: '#3399cc',
@@ -290,11 +320,11 @@
       const duration = feature.get('duration')
       const elapsed = frameState.time - feature.get('start')
       const elapsedRatio = elapsed / duration
-      const radius = vlCore.easingHelper.easeOut(elapsedRatio) * 35 + 5
-      const opacity = vlCore.easingHelper.easeOut(1 - elapsedRatio)
-      const fillOpacity = vlCore.easingHelper.easeOut(0.5 - elapsedRatio)
+      const radius = easeInOut(elapsedRatio) * 35 + 5
+      const opacity = easeInOut(1 - elapsedRatio)
+      const fillOpacity = easeInOut(0.5 - elapsedRatio)
 
-      vectorContext.setStyle(vlCore.styleHelper.style({
+      vectorContext.setStyle(createStyle({
         imageRadius: radius,
         fillColor: [119, 170, 203, fillOpacity],
         strokeColor: [119, 170, 203, opacity],
@@ -322,6 +352,9 @@
     },
     onMapPanelTabClick (tab) {
       this.mapPanel.tab = tab
+      if (tab !== 'draw') {
+        this.drawType = undefined
+      }
     },
   }
 
@@ -339,6 +372,35 @@
         mapPanel: {
           tab: 'state',
         },
+        drawControls: [
+          {
+            type: 'point',
+            label: 'Draw Point',
+            icon: 'map-marker',
+          },
+          {
+            type: 'line-string',
+            label: 'Draw LineString',
+            icon: 'minus',
+          },
+          {
+            type: 'polygon',
+            label: 'Draw Polygon',
+            icon: 'square-o',
+          },
+          {
+            type: 'circle',
+            label: 'Draw Circle',
+            icon: 'circle-thin',
+          },
+          {
+            type: undefined,
+            label: 'Stop drawing',
+            icon: 'times',
+          },
+        ],
+        drawType: undefined,
+        drawnFeatures: [],
         // layers config
         layers: [
           // Packman vector layer with static vector features
@@ -352,7 +414,7 @@
               cmp: 'vl-source-vector',
               staticFeatures: pacmanFeaturesCollection.features.map(feature => {
                 // transform coordinates from EPSG:4326 to the view projection
-                let { fromLonLat } = vlCore.projHelper.transforms[feature.geometry.type]
+                let { fromLonLat } = transforms[feature.geometry.type]
                 feature.geometry.coordinates = fromLonLat(feature.geometry.coordinates)
                 return feature
               }),
@@ -363,6 +425,32 @@
                 factory: this.pacmanStyleFunc,
               },
             ],
+          },
+          // Circles
+          {
+            id: 'circles',
+            title: 'Circles',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              staticFeatures: range(0, 100).map(i => {
+                let coordinate = pointFromLonLat([
+                  random(-50, 50),
+                  random(-50, 50),
+                ])
+
+                return {
+                  type: 'Feature',
+                  id: 'random-cirlce-' + i,
+                  geometry: {
+                    type: 'Circle',
+                    coordinates: coordinate,
+                    radius: random(Math.pow(10, 5), Math.pow(10, 6)),
+                  },
+                }
+              }),
+            },
           },
           // Countries vector layer
           // loads GeoJSON data from remote server
@@ -444,7 +532,7 @@
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
                 features: range(0, 10000).map(i => {
-                  let coordinate = vlCore.projHelper.fromLonLat([
+                  let coordinate = pointFromLonLat([
                     random(-50, 50),
                     random(-50, 50),
                   ])
@@ -482,7 +570,7 @@
                   'bbox=' + extent.join(',') + ',' + projection
               },
               strategyFactory () {
-                return vlCore.loadStrategyHelper.bbox
+                return loadingBBox
               },
             },
           },
@@ -526,6 +614,12 @@
       .panel-content
         background: $white
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
+      .panel-block
+        &.draw-panel
+          .buttons
+            .button
+              display: block
+              flex: 1 1 100%
       +widescreen()
         position: absolute
         top: 0
