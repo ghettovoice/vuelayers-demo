@@ -7,7 +7,7 @@
       <vl-view ref="view" :center="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
 
       <!-- interactions -->
-      <vl-interaction-select :features.sync="selectedFeatures">
+      <vl-interaction-select :features.sync="selectedFeatures" v-if="drawType == null">
         <template slot-scope="select">
           <!-- select styles -->
           <vl-style-box>
@@ -139,6 +139,16 @@
         <!--// style -->
       </component>
       <!--// other layers -->
+
+      <!-- draw components -->
+      <vl-layer-vector id="draw-pane" v-if="mapPanel.tab === 'draw'">
+        <vl-source-vector ident="draw-target" :features.sync="drawnFeatures"></vl-source-vector>
+      </vl-layer-vector>
+
+      <vl-interaction-draw v-if="mapPanel.tab === 'draw' && drawType" source="draw-target" :type="drawType"></vl-interaction-draw>
+      <vl-interaction-modify v-if="mapPanel.tab === 'draw'" source="draw-target"></vl-interaction-modify>
+      <vl-interaction-snap v-if="mapPanel.tab === 'draw'" source="draw-target" :priority="10"></vl-interaction-snap>
+      <!--// draw components -->
     </vl-map>
     <!--// app map -->
 
@@ -149,6 +159,7 @@
         <p class="panel-tabs">
           <a @click="onMapPanelTabClick('state')" :class="mapPanelTabClasses('state')">State</a>
           <a @click="onMapPanelTabClick('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
+          <a @click="onMapPanelTabClick('draw')" :class="mapPanelTabClasses('draw')">Draw</a>
         </p>
 
         <div class="panel-block" v-show="mapPanel.tab === 'state'">
@@ -183,6 +194,16 @@
             {{ layer.title }}
           </b-switch>
         </div>
+
+        <div class="panel-block draw-panel" v-show="mapPanel.tab === 'draw'">
+          <div class="buttons">
+            <button v-for="control in drawControls" :key="control.type || -1" @click="drawType = control.type" 
+                    :class="drawType && drawType === control.type ? 'is-info' : ''" class="button" >
+              <b-icon :icon="control.icon"></b-icon>
+              <span>{{ control.label }}</span>
+            </button>
+          </div>
+        </div>
       </b-panel>
     </div>
     <!--// map panel, controls -->
@@ -190,7 +211,7 @@
 </template>
 
 <script>
-  import { kebabCase, range, random } from 'lodash'
+  import { kebabCase, range, random, camelCase } from 'lodash'
   import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, transforms, loadingBBox, pointFromLonLat } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
 
@@ -210,6 +231,7 @@
   const easeInOut = t => 1 - Math.pow(1 - t, 3)
 
   const methods = {
+    camelCase,
     pointOnSurface: findPointOnSurface,
     geometryTypeToCmpName (type) {
       return 'vl-geom-' + kebabCase(type)
@@ -330,6 +352,9 @@
     },
     onMapPanelTabClick (tab) {
       this.mapPanel.tab = tab
+      if (tab !== 'draw') {
+        this.drawType = undefined
+      }
     },
   }
 
@@ -347,6 +372,35 @@
         mapPanel: {
           tab: 'state',
         },
+        drawControls: [
+          {
+            type: 'point',
+            label: 'Draw Point',
+            icon: 'map-marker',
+          },
+          {
+            type: 'line-string',
+            label: 'Draw LineString',
+            icon: 'minus',
+          },
+          {
+            type: 'polygon',
+            label: 'Draw Polygon',
+            icon: 'square-o',
+          },
+          {
+            type: 'circle',
+            label: 'Draw Circle',
+            icon: 'circle-thin',
+          },
+          {
+            type: undefined,
+            label: 'Stop drawing',
+            icon: 'times',
+          },
+        ],
+        drawType: undefined,
+        drawnFeatures: [],
         // layers config
         layers: [
           // Packman vector layer with static vector features
@@ -560,6 +614,12 @@
       .panel-content
         background: $white
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
+      .panel-block
+        &.draw-panel
+          .buttons
+            .button
+              display: block
+              flex: 1 1 100%
       +widescreen()
         position: absolute
         top: 0
