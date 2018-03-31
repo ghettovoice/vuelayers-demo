@@ -99,8 +99,8 @@
       <!--// circle geom -->
 
       <!-- base layer -->
-      <vl-layer-tile id="sputnik">
-        <vl-source-sputnik></vl-source-sputnik>
+      <vl-layer-tile id="osm">
+        <vl-source-osm></vl-source-osm>
       </vl-layer-tile>
 
       <!-- other layers from config -->

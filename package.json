@@ -11,7 +11,9 @@
     "e2e": "node test/e2e/runner.js",
     "test": "npm run unit && npm run e2e",
     "lint": "eslint --ext .js,.vue src test/unit/specs test/e2e/specs",
-    "build": "node build/build.js"
+    "build": "node build/build.js",
+    "gh-pages": "gh-pages -d dist -r git@github.com:VueLayers/demo.git -b master",
+    "deploy": "cross-env BASE_PATH=/demo npm run build && npm run gh-pages"
   },
   "dependencies": {
     "babel-plugin-transform-imports": "^1.5.0",
@@ -37,6 +39,7 @@
     "chalk": "^2.3.2",
     "chromedriver": "^2.36.0",
     "copy-webpack-plugin": "^4.5.1",
+    "cross-env": "^5.1.4",
     "cross-spawn": "^6.0.5",
     "css-loader": "^0.28.11",
     "eslint": "^4.19.0",
@@ -52,6 +55,7 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "file-loader": "^1.1.11",
     "friendly-errors-webpack-plugin": "^1.6.1",
+    "gh-pages": "^1.1.0",
     "html-webpack-plugin": "^3.0.7",
     "jest": "^22.4.2",
     "jest-serializer-vue": "^1.0.0",
