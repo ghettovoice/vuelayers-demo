@@ -19,7 +19,7 @@
     "bulma": "^0.6.2",
     "lodash": "^4.17.5",
     "vue": "^2.5.16",
-    "vuelayers": "^0.10.0-beta.4"
+    "vuelayers": "^0.10.0-beta.6"
   },
   "devDependencies": {
     "autoprefixer": "^8.1.0",
