@@ -620,7 +620,7 @@
             .button
               display: block
               flex: 1 1 100%
-      +widescreen()
+      +tablet()
         position: absolute
         top: 0
         right: 0
