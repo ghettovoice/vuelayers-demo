@@ -62,7 +62,7 @@
       <!--// interactions -->
 
       <!-- geolocation -->
-      <vl-geoloc @update:position="onUpdatePosition" projection="EPSG:3857">
+      <vl-geoloc @update:position="onUpdatePosition" data-projection="EPSG:4326">
         <template slot-scope="geoloc">
           <vl-feature v-if="geoloc.position" id="position-feature">
             <vl-geom-point :coordinates="geoloc.position"></vl-geom-point>
