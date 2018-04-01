@@ -4,7 +4,7 @@
     <vl-map class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
             @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose">
       <!-- map view aka ol.View -->
-      <vl-view ref="view" :center="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
+      <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation" data-projection="EPSG:4326"></vl-view>
 
       <!-- interactions -->
       <vl-interaction-select :features.sync="selectedFeatures" v-if="drawType == null">
@@ -625,7 +625,7 @@
         top: 0
         right: 0
         max-height: 500px
-        width: 20em
+        width: 22em
     .feature-popup
       position: absolute
       left: -50px
