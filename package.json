@@ -12,8 +12,8 @@
     "test": "npm run unit && npm run e2e",
     "lint": "eslint --ext .js,.vue src test/unit/specs test/e2e/specs",
     "build": "node build/build.js",
-    "gh-pages": "gh-pages -d dist -r git@github.com:VueLayers/demo.git -b master",
-    "deploy": "cross-env BASE_PATH=/demo npm run build && npm run gh-pages"
+    "deploy": "gh-pages -d dist -r git@github.com:VueLayers/demo.git -b master",
+    "bnd": "cross-env BASE_PATH=/demo npm run build && npm run deploy"
   },
   "dependencies": {
     "babel-plugin-transform-imports": "^1.5.0",
