@@ -95,7 +95,7 @@
 
       <!-- circle geom -->
       <vl-feature id="circle">
-        <vl-geom-circle :radius="1000000" :coordinates="[0, 100]"></vl-geom-circle>
+        <vl-geom-circle :radius="1000000" :coordinates="[0, 30]"></vl-geom-circle>
       </vl-feature>
       <!--// circle geom -->
 
@@ -213,7 +213,7 @@
 
 <script>
   import { kebabCase, range, random, camelCase } from 'lodash'
-  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, loadingBBox } from 'vuelayers/lib/ol-ext'
+  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/_esm/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
 
   // Custom projection for static Image layer
@@ -259,7 +259,7 @@
           imageFillColor: 'orange',
           geom (feature) {
             // geometry is an LineString, convert it to MultiPoint to style vertex
-            return createMultiPoint(feature.getGeometry().getCoordinates())
+            return createMultiPointGeom(feature.getGeometry().getCoordinates())
           },
         }),
       ]
@@ -411,9 +411,10 @@
             title: 'Pacman',
             cmp: 'vl-layer-vector',
             visible: false,
+            renderMode: 'image',
             source: {
               cmp: 'vl-source-vector',
-              staticFeatures: pacmanFeaturesCollection,
+              staticFeatures: pacmanFeaturesCollection.features,
             },
             style: [
               {
@@ -528,7 +529,7 @@
                 cmp: 'vl-source-vector',
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
-                features: range(0, 10000).map(i => {
+                features: range(0, 100).map(i => {
                   let coordinate = [
                     random(-50, 50),
                     random(-50, 50),
