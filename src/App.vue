@@ -2,7 +2,8 @@
   <div id="app" :class="[$options.name]">
     <!-- app map -->
     <vl-map class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
-            @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose">
+            @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose"
+            data-projection="EPSG:4326">
       <!-- map view aka ol.View -->
       <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation" data-projection="EPSG:4326"></vl-view>
 
@@ -62,7 +63,7 @@
       <!--// interactions -->
 
       <!-- geolocation -->
-      <vl-geoloc @update:position="onUpdatePosition" data-projection="EPSG:4326">
+      <vl-geoloc @update:position="onUpdatePosition">
         <template slot-scope="geoloc">
           <vl-feature v-if="geoloc.position" id="position-feature">
             <vl-geom-point :coordinates="geoloc.position"></vl-geom-point>
@@ -94,7 +95,7 @@
 
       <!-- circle geom -->
       <vl-feature id="circle">
-        <vl-geom-circle :radius="1000000" :coordinates="[0, 100000000]"></vl-geom-circle>
+        <vl-geom-circle :radius="1000000" :coordinates="[0, 100]"></vl-geom-circle>
       </vl-feature>
       <!--// circle geom -->
 
@@ -212,7 +213,7 @@
 
 <script>
   import { kebabCase, range, random, camelCase } from 'lodash'
-  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, transforms, loadingBBox, pointFromLonLat } from 'vuelayers/lib/ol-ext'
+  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPoint, loadingBBox } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
 
   // Custom projection for static Image layer
@@ -412,12 +413,7 @@
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              staticFeatures: pacmanFeaturesCollection.features.map(feature => {
-                // transform coordinates from EPSG:4326 to the view projection
-                let { fromLonLat } = transforms[feature.geometry.type]
-                feature.geometry.coordinates = fromLonLat(feature.geometry.coordinates)
-                return feature
-              }),
+              staticFeatures: pacmanFeaturesCollection,
             },
             style: [
               {
@@ -435,10 +431,10 @@
             source: {
               cmp: 'vl-source-vector',
               staticFeatures: range(0, 100).map(i => {
-                let coordinate = pointFromLonLat([
+                let coordinate = [
                   random(-50, 50),
                   random(-50, 50),
-                ])
+                ]
 
                 return {
                   type: 'Feature',
@@ -522,6 +518,7 @@
             id: 'cluster',
             title: 'Cluster',
             cmp: 'vl-layer-vector',
+            renderMode: 'image',
             visible: false,
             // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
             source: {
@@ -532,10 +529,10 @@
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
                 features: range(0, 10000).map(i => {
-                  let coordinate = pointFromLonLat([
+                  let coordinate = [
                     random(-50, 50),
                     random(-50, 50),
-                  ])
+                  ]
 
                   return {
                     type: 'Feature',
@@ -560,6 +557,7 @@
             title: 'WFS (Canada water areas)',
             cmp: 'vl-layer-vector',
             visible: false,
+            renderMode: 'image',
             source: {
               cmp: 'vl-source-vector',
               features: [],
