@@ -524,12 +524,12 @@
             // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
             source: {
               cmp: 'vl-source-cluster',
-              distance: 40,
+              distance: 50,
               source: {
                 cmp: 'vl-source-vector',
                 // features defined as array of GeoJSON encoded Features
                 // to not overload Vue and DOM
-                features: range(0, 100).map(i => {
+                features: range(0, 10000).map(i => {
                   let coordinate = [
                     random(-50, 50),
                     random(-50, 50),
