@@ -99,10 +99,11 @@
       </vl-feature>
       <!--// circle geom -->
 
-      <!-- base layer -->
-      <vl-layer-tile id="osm">
-        <vl-source-osm></vl-source-osm>
+      <!-- base layers -->
+      <vl-layer-tile v-for="layer in baseLayers" :key="layer.name" :id="layer.name" :visible="layer.visible">
+        <component :is="'vl-source-' + layer.name" v-bind="layer"></component>
       </vl-layer-tile>
+      <!--// base layers -->
 
       <!-- other layers from config -->
       <component v-for="layer in layers" :is="layer.cmp" v-if="layer.visible" :key="layer.id" v-bind="layer">
@@ -158,9 +159,9 @@
       <b-panel :has-custom-template="true" :collapsible="true">
         <strong slot="header">Map panel</strong>
         <p class="panel-tabs">
-          <a @click="onMapPanelTabClick('state')" :class="mapPanelTabClasses('state')">State</a>
-          <a @click="onMapPanelTabClick('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
-          <a @click="onMapPanelTabClick('draw')" :class="mapPanelTabClasses('draw')">Draw</a>
+          <a @click="showMapPanelTab('state')" :class="mapPanelTabClasses('state')">State</a>
+          <a @click="showMapPanelTab('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
+          <a @click="showMapPanelTab('draw')" :class="mapPanelTabClasses('draw')">Draw</a>
         </p>
 
         <div class="panel-block" v-show="mapPanel.tab === 'state'">
@@ -188,7 +189,7 @@
           </table>
         </div>
 
-        <div class="panel-block" v-for="layer in layers" :key="layer.id" @click="onMapPanelLayerClick"
+        <div class="panel-block" v-for="layer in layers" :key="layer.id" @click="showMapPanelLayer"
              :class="{ 'is-active': layer.visible }"
              v-show="mapPanel.tab === 'layers'">
           <b-switch :key="layer.id" v-model="layer.visible">
@@ -208,6 +209,18 @@
       </b-panel>
     </div>
     <!--// map panel, controls -->
+
+    <!-- base layers switch -->
+    <div class="base-layers-panel">
+      <div class="buttons has-addons">
+        <button class="button is-light" v-for="layer in baseLayers" 
+                :key="layer.name" :class="{ 'is-info': layer.visible }"
+                @click="showBaseLayer(layer.name)">
+          {{ layer.title }}
+        </button>
+      </div>
+    </div>
+    <!--// base layers -->
   </div>
 </template>
 
@@ -342,16 +355,28 @@
 
       this.$refs.map.render()
     },
+    // base layers
+    showBaseLayer (name) {
+      let layer = this.baseLayers.find(layer => layer.visible)
+      if (layer != null) {
+        layer.visible = false
+      }
+
+      layer = this.baseLayers.find(layer => layer.name === name)
+      if (layer != null) {
+        layer.visible = true
+      }
+    },
     // map panel
     mapPanelTabClasses (tab) {
       return {
         'is-active': this.mapPanel.tab === tab,
       }
     },
-    onMapPanelLayerClick (layer) {
+    showMapPanelLayer (layer) {
       layer.visible = !layer.visible
     },
-    onMapPanelTabClick (tab) {
+    showMapPanelTab (tab) {
       this.mapPanel.tab = tab
       if (tab !== 'draw') {
         this.drawType = undefined
@@ -402,6 +427,31 @@
         ],
         drawType: undefined,
         drawnFeatures: [],
+        // base layers
+        baseLayers: [
+          {
+            name: 'osm',
+            title: 'OpenStreetMap',
+            visible: true,
+          },
+          {
+            name: 'sputnik',
+            title: 'Sputnik Maps',
+            visible: false,
+          },
+          // needs paid plan to get key
+          // {
+          //   name: 'mapbox',
+          //   title: 'Mapbox',
+          // },
+          {
+            name: 'bing-maps',
+            title: 'Bing Maps',
+            apiKey: 'ArbsA9NX-AZmebC6VyXAnDqjXk6mo2wGCmeYM8EwyDaxKfQhUYyk0jtx6hX5fpMn',
+            imagerySet: 'CanvasGray',
+            visible: false,
+          },
+        ],
         // layers config
         layers: [
           // Packman vector layer with static vector features
@@ -603,34 +653,47 @@
 
   .vld-demo-app
     position: relative
+
     .map
       height: 100%
       width: 100%
+
     .map-panel
       padding: 0
+      
       .panel-heading
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
+
       .panel-content
         background: $white
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
+
       .panel-block
         &.draw-panel
           .buttons
             .button
               display: block
               flex: 1 1 100%
+
       +tablet()
         position: absolute
         top: 0
         right: 0
         max-height: 500px
         width: 22em
+
+    .base-layers-panel
+      position: absolute
+      left: 20px
+      bottom: 20px
+
     .feature-popup
       position: absolute
       left: -50px
       bottom: 12px
       width: 20em
       max-width: none
+
       &:after, &:before
         top: 100%
         border: solid transparent
@@ -649,9 +712,11 @@
         border-width: 11px
         left: 48px
         margin-left: -11px
+
       .card-content
         max-height: 20em
         overflow: auto
+
       .content
         word-break: break-all
 </style>
