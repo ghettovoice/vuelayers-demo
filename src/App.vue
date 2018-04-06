@@ -5,7 +5,7 @@
             @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose"
             data-projection="EPSG:4326">
       <!-- map view aka ol.View -->
-      <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation" data-projection="EPSG:4326"></vl-view>
+      <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
 
       <!-- interactions -->
       <vl-interaction-select :features.sync="selectedFeatures" v-if="drawType == null">
