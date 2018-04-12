@@ -3,7 +3,7 @@
     <!-- app map -->
     <vl-map class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
             @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose"
-            data-projection="EPSG:4326">
+            data-projection="EPSG:4326" @created="onMapCreated">
       <!-- map view aka ol.View -->
       <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
 
@@ -199,7 +199,7 @@
 
         <div class="panel-block draw-panel" v-show="mapPanel.tab === 'draw'">
           <div class="buttons">
-            <button v-for="control in drawControls" :key="control.type || -1" @click="drawType = control.type" 
+            <button v-for="control in drawControls" :key="control.type || -1" @click="drawType = control.type"
                     :class="drawType && drawType === control.type ? 'is-info' : ''" class="button" >
               <b-icon :icon="control.icon"></b-icon>
               <span>{{ control.label }}</span>
@@ -213,7 +213,7 @@
     <!-- base layers switch -->
     <div class="base-layers-panel">
       <div class="buttons has-addons">
-        <button class="button is-light" v-for="layer in baseLayers" 
+        <button class="button is-light" v-for="layer in baseLayers"
                 :key="layer.name" :class="{ 'is-info': layer.visible }"
                 @click="showBaseLayer(layer.name)">
           {{ layer.title }}
@@ -228,6 +228,10 @@
   import { kebabCase, range, random, camelCase } from 'lodash'
   import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/_esm/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
+  import ScaleLine from 'ol/control/scaleline'
+  import FullScreen from 'ol/control/fullscreen'
+  import OverviewMap from 'ol/control/overviewmap'
+  import ZoomSlider from 'ol/control/zoomslider'
 
   // Custom projection for static Image layer
   let x = 1024 * 10000
@@ -354,6 +358,15 @@
       }
 
       this.$refs.map.render()
+    },
+    onMapCreated () {
+      // now ol.Map instance is ready and we can work with it directly
+      this.$refs.map.$map.getControls().extend([
+        new ScaleLine(),
+        new FullScreen(),
+        new OverviewMap(),
+        new ZoomSlider(),
+      ])
     },
     // base layers
     showBaseLayer (name) {
@@ -660,7 +673,7 @@
 
     .map-panel
       padding: 0
-      
+
       .panel-heading
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
 
@@ -684,8 +697,9 @@
 
     .base-layers-panel
       position: absolute
-      left: 20px
+      left: 50%
       bottom: 20px
+      transform: translateX(-50%)
 
     .feature-popup
       position: absolute

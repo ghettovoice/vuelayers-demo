@@ -13,8 +13,8 @@ Vue.use(Buefy, {
 })
 // register all VueLayers components
 Vue.use(VueLayers, {
-  // returns old behavior like in < v0.9
-  // bindToProj: 'EPSG:4326',
+  // global data projection, see https://vuelayers.github.io/#/quickstart?id=global-data-projection
+  // dataProjection: 'EPSG:4326',
 })
 
 /* eslint-disable no-new */
