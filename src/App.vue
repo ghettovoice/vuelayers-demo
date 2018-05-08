@@ -658,6 +658,24 @@
               cmp: 'vl-source-vector-tile',
               url: 'https://basemaps.arcgis.com/v1/arcgis/rest/services/World_Basemap/VectorTileServer/tile/{z}/{y}/{x}.pbf',
             },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    width: 2,
+                    color: '#2979ff',
+                  },
+                  'vl-style-circle': {
+                    radius: 5,
+                    stroke: {
+                      width: 1.5,
+                      color: '#2979ff',
+                    },
+                  },
+                },
+              },
+            ],
           },
         ],
       }
