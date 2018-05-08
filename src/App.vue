@@ -649,6 +649,16 @@
               extent: imageExtent,
             },
           },
+          {
+            id: 'vector-tiles',
+            title: 'Vector tiles',
+            cmp: 'vl-layer-vector-tile',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector-tile',
+              url: 'https://basemaps.arcgis.com/v1/arcgis/rest/services/World_Basemap/VectorTileServer/tile/{z}/{y}/{x}.pbf',
+            },
+          },
         ],
       }
     },
