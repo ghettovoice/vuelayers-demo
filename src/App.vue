@@ -1,9 +1,9 @@
 <template xmlns:>
   <div id="app" :class="[$options.name]">
     <!-- app map -->
-    <vl-map class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
+    <vl-map v-if="mapVisibile" class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
             @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose"
-            data-projection="EPSG:4326" @created="onMapCreated">
+            data-projection="EPSG:4326" @mounted="onMapMounted">
       <!-- map view aka ol.View -->
       <vl-view ref="view" :center.sync="center" :zoom.sync="zoom" :rotation.sync="rotation"></vl-view>
 
@@ -218,6 +218,9 @@
                 @click="showBaseLayer(layer.name)">
           {{ layer.title }}
         </button>
+        <button class="button is-light" @click="mapVisibile = !mapVisibile">
+          {{ mapVisibile ? 'Hide map' : 'Show map' }}
+        </button>
       </div>
     </div>
     <!--// base layers -->
@@ -359,12 +362,15 @@
 
       this.$refs.map.render()
     },
-    onMapCreated () {
+    onMapMounted () {
       // now ol.Map instance is ready and we can work with it directly
       this.$refs.map.$map.getControls().extend([
         new ScaleLine(),
         new FullScreen(),
-        new OverviewMap(),
+        new OverviewMap({
+          collapsed: false,
+          collapsible: true,
+        }),
         new ZoomSlider(),
       ])
     },
@@ -411,6 +417,7 @@
         mapPanel: {
           tab: 'state',
         },
+        mapVisibile: true,
         drawControls: [
           {
             type: 'point',
