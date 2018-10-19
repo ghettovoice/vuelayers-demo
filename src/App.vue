@@ -29,9 +29,9 @@
 
           <!-- selected feature popup -->
           <vl-overlay class="feature-popup" v-for="feature in select.features" :key="feature.id" :id="feature.id"
-                      :position="pointOnSurface(feature.geometry)" :auto-pan="true">
+                      :position="pointOnSurface(feature.geometry)" :auto-pan="true" :auto-pan-animation="{ duration: 300 }">
             <template slot-scope="popup">
-              <section class="card" style="width: 500px">
+              <section class="card">
                 <header class="card-header">
                   <p class="card-header-title">
                     Feature ID {{ feature.id }}
