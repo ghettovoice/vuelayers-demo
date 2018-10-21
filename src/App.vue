@@ -1,7 +1,7 @@
 <template xmlns:>
   <div id="app" :class="[$options.name]">
     <!-- app map -->
-    <vl-map v-if="mapVisibile" class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
+    <vl-map v-if="mapVisible" class="map" ref="map" :load-tiles-while-animating="true" :load-tiles-while-interacting="true"
             @click="clickCoordinate = $event.coordinate" @postcompose="onMapPostCompose"
             data-projection="EPSG:4326" @mounted="onMapMounted">
       <!-- map view aka ol.View -->
@@ -29,7 +29,7 @@
 
           <!-- selected feature popup -->
           <vl-overlay class="feature-popup" v-for="feature in select.features" :key="feature.id" :id="feature.id"
-                      :position="pointOnSurface(feature.geometry)" :auto-pan="true">
+                      :position="pointOnSurface(feature.geometry)" :auto-pan="true" :auto-pan-animation="{ duration: 300 }">
             <template slot-scope="popup">
               <section class="card">
                 <header class="card-header">
@@ -156,8 +156,17 @@
 
     <!-- map panel, controls -->
     <div class="map-panel">
-      <b-panel :has-custom-template="true" :collapsible="true">
-        <strong slot="header">Map panel</strong>
+      <b-collapse class="panel box is-paddingless" :open.sync="panelOpen">
+        <div slot="trigger" class="panel-heading">
+          <div class="columns">
+            <div class="column is-11">
+              <strong>Map panel</strong>
+            </div>
+            <div class="column">
+              <b-icon :icon="panelOpen ? 'chevron-up' : 'chevron-down'" size="is-small"></b-icon>
+            </div>
+          </div>
+        </div>
         <p class="panel-tabs">
           <a @click="showMapPanelTab('state')" :class="mapPanelTabClasses('state')">State</a>
           <a @click="showMapPanelTab('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
@@ -206,7 +215,7 @@
             </button>
           </div>
         </div>
-      </b-panel>
+      </b-collapse>
     </div>
     <!--// map panel, controls -->
 
@@ -218,8 +227,8 @@
                 @click="showBaseLayer(layer.name)">
           {{ layer.title }}
         </button>
-        <button class="button is-light" @click="mapVisibile = !mapVisibile">
-          {{ mapVisibile ? 'Hide map' : 'Show map' }}
+        <button class="button is-light" @click="mapVisible = !mapVisible">
+          {{ mapVisible ? 'Hide map' : 'Show map' }}
         </button>
       </div>
     </div>
@@ -229,12 +238,12 @@
 
 <script>
   import { kebabCase, range, random, camelCase } from 'lodash'
-  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/_esm/ol-ext'
+  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
-  import ScaleLine from 'ol/control/scaleline'
-  import FullScreen from 'ol/control/fullscreen'
-  import OverviewMap from 'ol/control/overviewmap'
-  import ZoomSlider from 'ol/control/zoomslider'
+  import ScaleLine from 'ol/control/ScaleLine'
+  import FullScreen from 'ol/control/FullScreen'
+  import OverviewMap from 'ol/control/OverviewMap'
+  import ZoomSlider from 'ol/control/ZoomSlider'
 
   // Custom projection for static Image layer
   let x = 1024 * 10000
@@ -417,7 +426,8 @@
         mapPanel: {
           tab: 'state',
         },
-        mapVisibile: true,
+        panelOpen: true,
+        mapVisible: true,
         drawControls: [
           {
             type: 'point',
