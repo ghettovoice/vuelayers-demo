@@ -22,7 +22,7 @@
     "lodash": "^4.17.11",
     "ol": "^5.2.0",
     "vue": "^2.5.17",
-    "vuelayers": "^0.11.0-beta.3"
+    "vuelayers": "^0.11.0-rc.1"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
