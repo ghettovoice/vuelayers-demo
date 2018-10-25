@@ -2,7 +2,7 @@ module.exports = function (api) {
   api.cache(true)
 
   const presets = [
-    ['@babel/preset-env', { modules: false }],
+    ['@babel/preset-env', { modules: false, useBuiltIns: 'entry' }],
   ]
   const plugins = [
     // Stage 0
@@ -26,7 +26,7 @@ module.exports = function (api) {
     ['@babel/plugin-proposal-class-properties', { 'loose': false }],
     '@babel/plugin-proposal-json-strings',
     // Other
-    '@babel/plugin-transform-runtime',
+    ['@babel/plugin-transform-runtime', { corejs: false, helpers: true, regenerator: true, useESModules: true }],
   ]
   const env = {
     test: {

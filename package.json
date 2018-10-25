@@ -16,7 +16,7 @@
     "bnd": "cross-env BASE_PATH=/demo npm run build && npm run deploy"
   },
   "dependencies": {
-    "@babel/runtime": "^7.1.2",
+    "@babel/polyfill": "^7.0.0",
     "buefy": "^0.7.0",
     "bulma": "^0.7.2",
     "lodash": "^4.17.11",
