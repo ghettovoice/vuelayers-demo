@@ -1,7 +1,8 @@
 {
   "presets": [
     ["env", {
-      "modules": false
+      "modules": false,
+      "useBuiltIns": true
     }],
     "stage-2"
   ],
