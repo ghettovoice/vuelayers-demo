@@ -475,7 +475,7 @@
           //   title: 'Mapbox',
           // },
           {
-            name: 'bing-maps',
+            name: 'bingmaps',
             title: 'Bing Maps',
             apiKey: 'ArbsA9NX-AZmebC6VyXAnDqjXk6mo2wGCmeYM8EwyDaxKfQhUYyk0jtx6hX5fpMn',
             imagerySet: 'CanvasGray',
