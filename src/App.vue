@@ -667,6 +667,18 @@
             },
           },
           {
+            id: 'wms-image',
+            title: 'Image WMS',
+            cmp: 'vl-layer-image',
+            visible: false,
+            source: {
+              cmp: 'vl-source-image-wms',
+              url: 'https://ahocevar.com/geoserver/wms',
+              layers: 'topp:states',
+              serverType: 'geoserver',
+            },
+          },
+          {
             id: 'vector-tiles',
             title: 'Vector tiles',
             cmp: 'vl-layer-vector-tile',

@@ -16,13 +16,13 @@
     "bnd": "cross-env BASE_PATH=/demo npm run build && npm run deploy"
   },
   "dependencies": {
-    "@babel/runtime": "^7.1.2",
+    "@babel/polyfill": "^7.0.0",
     "buefy": "^0.7.0",
     "bulma": "^0.7.2",
     "lodash": "^4.17.11",
     "ol": "^5.2.0",
     "vue": "^2.5.17",
-    "vuelayers": "^0.11.0-rc.1"
+    "vuelayers": "^0.11.0-rc.3"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
