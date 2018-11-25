@@ -9,6 +9,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin')
 const baseWebpackConfig = require('./webpack.base.conf')
 const config = require('../config')
+const utils = require('./utils')
 
 const env = process.env.NODE_ENV === 'testing'
   ? require('../config/test.env')
