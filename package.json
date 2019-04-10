@@ -20,9 +20,9 @@
     "buefy": "^0.7.0",
     "bulma": "^0.7.2",
     "lodash": "^4.17.11",
-    "ol": "^5.2.0",
+    "ol": "^5.3.1",
     "vue": "^2.5.17",
-    "vuelayers": "^0.11.1"
+    "vuelayers": "^0.11.4"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
