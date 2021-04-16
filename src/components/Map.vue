@@ -4,7 +4,7 @@
       ref="map"
       data-projection="EPSG:4326"
       @click="clickCoordinate = $event.coordinate"
-      @mounted="onMapMounted">
+      @created="onMapCreated">
       <VlView
         ref="view"
         :center.sync="center"
@@ -78,73 +78,73 @@
       <!--// base layers -->
 
       <!-- other layers from config -->
-      <!--      <component-->
-      <!--        v-for="layer in layers"-->
-      <!--        :is="layer.cmp"-->
-      <!--        :key="layer.id"-->
-      <!--        v-bind="layer">-->
-      <!--        &lt;!&ndash; add vl-source-* &ndash;&gt;-->
-      <!--        <component-->
-      <!--          :is="layer.source.cmp"-->
-      <!--          v-bind="layer.source">-->
-      <!--          &lt;!&ndash; add static features to vl-source-vector if provided &ndash;&gt;-->
-      <!--          <template v-if="layer.source.staticFeatures && layer.source.staticFeatures.length">-->
-      <!--            <VlFeature-->
-      <!--              v-for="feature in layer.source.staticFeatures" :key="feature.id"-->
-      <!--              :id="feature.id" :properties="feature.properties">-->
-      <!--              <component-->
-      <!--                :is="geometryTypeToCmpName(feature.geometry.type)"-->
-      <!--                v-bind="feature.geometry"/>-->
-      <!--            </VlFeature>-->
-      <!--          </template>-->
+      <component
+        v-for="layer in layers"
+        :is="layer.cmp"
+        :key="layer.id"
+        v-bind="layer">
+        <!-- add vl-source-* -->
+        <component
+          :is="layer.source.cmp"
+          v-bind="layer.source">
+          <!-- add static features to vl-source-vector if provided -->
+          <template v-if="layer.source.staticFeatures && layer.source.staticFeatures.length">
+            <VlFeature
+              v-for="feature in layer.source.staticFeatures" :key="feature.id"
+              :id="feature.id" :properties="feature.properties">
+              <component
+                :is="geometryTypeToCmpName(feature.geometry.type)"
+                v-bind="feature.geometry"/>
+            </VlFeature>
+          </template>
 
-      <!--          &lt;!&ndash; add inner source if provided (like vl-source-vector inside vl-source-cluster) &ndash;&gt;-->
-      <!--          <component-->
-      <!--            v-if="layer.source.source"-->
-      <!--            :is="layer.source.source.cmp"-->
-      <!--            v-bind="layer.source.source">-->
-      <!--            &lt;!&ndash; add static features to vl-source-vector if provided &ndash;&gt;-->
-      <!--            <template v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length">-->
-      <!--              <VlFeature-->
-      <!--                v-for="feature in layer.source.source.staticFeatures" :key="feature.id"-->
-      <!--                :id="feature.id" :properties="feature.properties">-->
-      <!--                <component-->
-      <!--                  :is="geometryTypeToCmpName(feature.geometry.type)"-->
-      <!--                  v-bind="feature.geometry"/>-->
-      <!--              </VlFeature>-->
-      <!--            </template>-->
-      <!--          </component>-->
-      <!--        </component>-->
-      <!--        &lt;!&ndash;// vl-source-* &ndash;&gt;-->
+          <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
+          <component
+            v-if="layer.source.source"
+            :is="layer.source.source.cmp"
+            v-bind="layer.source.source">
+            <!-- add static features to vl-source-vector if provided -->
+            <template v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length">
+              <VlFeature
+                v-for="feature in layer.source.source.staticFeatures" :key="feature.id"
+                :id="feature.id" :properties="feature.properties">
+                <component
+                  :is="geometryTypeToCmpName(feature.geometry.type)"
+                  v-bind="feature.geometry"/>
+              </VlFeature>
+            </template>
+          </component>
+        </component>
+        <!--// vl-source-* -->
 
-      <!--        &lt;!&ndash; add style components if provided &ndash;&gt;-->
-      <!--        &lt;!&ndash; create vl-style-box or vl-style-func &ndash;&gt;-->
-      <!--        <template v-if="layer.style">-->
-      <!--          <component-->
-      <!--            v-for="(style, i) in layer.style"-->
-      <!--            :key="i"-->
-      <!--            :is="style.cmp"-->
-      <!--            v-bind="style">-->
-      <!--            &lt;!&ndash; create inner style components: vl-style-circle, vl-style-icon, vl-style-fill, vl-style-stroke & etc &ndash;&gt;-->
-      <!--            <template v-if="style.styles">-->
-      <!--              <component-->
-      <!--                v-for="(st, cmp) in style.styles"-->
-      <!--                :key="cmp"-->
-      <!--                :is="cmp"-->
-      <!--                v-bind="st">-->
-      <!--                &lt;!&ndash; vl-style-fill, vl-style-stroke if provided &ndash;&gt;-->
-      <!--                <VlStyleFill-->
-      <!--                  v-if="st.fill"-->
-      <!--                  v-bind="st.fill"/>-->
-      <!--                <VlStyleStroke-->
-      <!--                  v-if="st.stroke"-->
-      <!--                  v-bind="st.stroke"/>-->
-      <!--              </component>-->
-      <!--            </template>-->
-      <!--          </component>-->
-      <!--        </template>-->
-      <!--        &lt;!&ndash;// style &ndash;&gt;-->
-      <!--      </component>-->
+        <!-- add style components if provided -->
+        <!-- create vl-style-box or vl-style-func -->
+        <template v-if="layer.style">
+          <component
+            v-for="(style, i) in layer.style"
+            :key="i"
+            :is="style.cmp"
+            v-bind="style">
+            <!-- create inner style components: vl-style-circle, vl-style-icon, vl-style-fill, vl-style-stroke & etc -->
+            <template v-if="style.styles">
+              <component
+                v-for="(st, cmp) in style.styles"
+                :key="cmp"
+                :is="cmp"
+                v-bind="st">
+                <!-- vl-style-fill, vl-style-stroke if provided -->
+                <VlStyleFill
+                  v-if="st.fill"
+                  v-bind="st.fill"/>
+                <VlStyleStroke
+                  v-if="st.stroke"
+                  v-bind="st.stroke"/>
+              </component>
+            </template>
+          </component>
+        </template>
+        <!--// style -->
+      </component>
       <!--// other layers -->
 
       <!-- draw target -->
@@ -327,7 +327,7 @@
 <script>
 import {camelCase, kebabCase, random, range} from 'lodash'
 import pacmanFeaturesCollection from '../assets/pacman.geojson'
-import {FullScreen, OverviewMap, ScaleLine, ZoomSlider} from 'ol/control'
+import {FullScreen, ScaleLine, ZoomSlider} from 'ol/control'
 import {addProjection, Projection} from 'ol/proj'
 import {MultiPoint} from 'ol/geom'
 import {bbox} from 'ol/loadingstrategy'
@@ -744,16 +744,17 @@ export default {
       }
       this.$refs.map.render()
     },
-    onMapMounted(vm) {
+    onMapCreated(vm) {
       // now ol.Map instance is ready and we can work with it directly
       console.log('map vm', vm)
       vm.addControls([
         new ScaleLine(),
         new FullScreen(),
-        new OverviewMap({
-          collapsed: false,
-          collapsible: true,
-        }),
+        // TODO need to provide some base layers
+        // new OverviewMap({
+        //   collapsed: false,
+        //   collapsible: true,
+        // }),
         new ZoomSlider(),
       ])
     },
