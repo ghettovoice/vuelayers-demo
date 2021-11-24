@@ -118,7 +118,7 @@
         <!--// vl-source-* -->
 
         <!-- add style components if provided -->
-        <!-- create vl-style-box or vl-style-func -->
+        <!-- create vl-style or vl-style-func -->
         <template v-if="layer.style">
           <component
             v-for="(style, i) in layer.style"
@@ -424,9 +424,8 @@ export default {
         {
           id: 'pacman',
           title: 'Pacman',
-          cmp: 'vl-layer-vector',
+          cmp: 'vl-layer-vector-image',
           visible: false,
-          renderMode: 'image',
           source: {
             cmp: 'vl-source-vector',
             staticFeatures: pacmanFeaturesCollection.features,
@@ -434,7 +433,7 @@ export default {
           style: [
             {
               cmp: 'vl-style-func',
-              factory: this.pacmanStyleFunc,
+              function: this.pacmanStyleFunc(),
             },
           ],
         },
@@ -476,7 +475,7 @@ export default {
           },
           style: [
             {
-              cmp: 'vl-style-box',
+              cmp: 'vl-style',
               styles: {
                 'vl-style-fill': {
                   color: [255, 255, 255, 0.5],
@@ -506,7 +505,7 @@ export default {
           cmp: 'vl-layer-tile',
           visible: false,
           source: {
-            cmp: 'vl-source-wms',
+            cmp: 'vl-source-tile-wms',
             url: 'https://ahocevar.com/geoserver/wms',
             layers: 'topp:states',
             extParams: {TILED: true},
@@ -532,8 +531,7 @@ export default {
         {
           id: 'cluster',
           title: 'Cluster',
-          cmp: 'vl-layer-vector',
-          renderMode: 'image',
+          cmp: 'vl-layer-vector-image',
           visible: false,
           // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
           source: {
@@ -562,16 +560,15 @@ export default {
           style: [
             {
               cmp: 'vl-style-func',
-              factory: this.clusterStyleFunc,
+              function: this.clusterStyleFunc(),
             },
           ],
         },
         {
           id: 'wfs',
           title: 'WFS (Canada water areas)',
-          cmp: 'vl-layer-vector',
+          cmp: 'vl-layer-vector-image',
           visible: false,
-          renderMode: 'image',
           source: {
             cmp: 'vl-source-vector',
             features: [],
@@ -581,9 +578,7 @@ export default {
                 'outputFormat=application/json&srsname=' + projection + '&' +
                 'bbox=' + extent.join(',') + ',' + projection
             },
-            strategyFactory() {
-              return bbox
-            },
+            loadingStrategy: bbox,
           },
         },
         {
@@ -595,8 +590,8 @@ export default {
             cmp: 'vl-source-image-static',
             projection: customProj.getCode(),
             url: 'https://imgs.xkcd.com/comics/online_communities.png',
-            size: [1024, 968],
-            extent: imageExtent,
+            imageSize: [1024, 968],
+            imageExtent: imageExtent,
           },
         },
         {
@@ -622,7 +617,7 @@ export default {
           },
           style: [
             {
-              cmp: 'vl-style-box',
+              cmp: 'vl-style',
               styles: {
                 'vl-style-stroke': {
                   width: 2,
