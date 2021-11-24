@@ -10,7 +10,7 @@
   "dependencies": {
     "buefy": "^0.9.4",
     "core-js": "^3.6.5",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "vue": "^2.6.11",
     "vuelayers": "^0.12.0-rc.18"
   },
