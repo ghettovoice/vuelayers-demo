@@ -1,10 +1,12 @@
 <template>
   <div class="map">
     <VlMap
+      v-show="mapVisible"
       ref="map"
       data-projection="EPSG:4326"
       @click="clickCoordinate = $event.coordinate"
-      @created="onMapCreated">
+      @created="onMapCreated"
+      @dl:postrender="onMapDefLayerPostRender">
       <VlView
         ref="view"
         :center.sync="center"
@@ -13,7 +15,7 @@
 
       <!-- geolocation -->
       <VlGeoloc @update:position="onUpdatePosition">
-        <template slot-scope="geoloc">
+        <template #default="geoloc">
           <VlFeature
             v-if="geoloc.position"
             id="position-feature">
@@ -34,7 +36,7 @@
         id="marker"
         ref="marker"
         :properties="{ start: Date.now(), duration: 2500 }">
-        <template slot-scope="feature">
+        <template #default="feature">
           <VlGeomPoint :coordinates="[-10, -10]"/>
           <VlStyle>
             <VlStyleIcon
@@ -197,7 +199,7 @@
             :position="pointOnSurface(feature.geometry)"
             :auto-pan="true"
             :auto-pan-animation="{ duration: 300 }">
-            <template slot-scope="popup">
+            <template #default="popup">
               <section class="card">
                 <header class="card-header">
                   <p class="card-header-title">
@@ -331,6 +333,7 @@ import {FullScreen, ScaleLine, ZoomSlider} from 'ol/control'
 import {addProjection, Projection} from 'ol/proj'
 import {MultiPoint} from 'ol/geom'
 import {bbox} from 'ol/loadingstrategy'
+import {getVectorContext} from 'ol/render'
 import {createStyle, findPointOnSurface} from 'vuelayers/dist/ol-ext'
 
 // Custom projection for static Image layer
@@ -399,11 +402,6 @@ export default {
           title: 'OpenStreetMap',
           visible: true,
         },
-        {
-          name: 'sputnik',
-          title: 'Sputnik Maps',
-          visible: false,
-        },
         // needs paid plan to get key
         // {
         //   name: 'mapbox',
@@ -457,6 +455,7 @@ export default {
                   type: 'Circle',
                   coordinates: coordinate,
                   radius: random(Math.pow(10, 5), Math.pow(10, 6)),
+                  radiusProjection: 'EPSG:3857',
                 },
               }
             }),
@@ -698,11 +697,24 @@ export default {
         if (!style) {
           style = createStyle({
             imageRadius: 10,
-            strokeColor: '#fff',
-            fillColor: '#3399cc',
+            imageStrokeColor: '#fff',
+            imageFillColor: '#3399cc',
             text: size.toString(),
             textFillColor: '#fff',
           })
+          // with OpenLayers native API
+          // import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
+          // style = new Style({
+          //   image: new Circle({
+          //     radius: 10,
+          //     fill: new Fill({ color: '#3399cc' }),
+          //     stroke: new Stroke({ color: '#fff' }),
+          //   }),
+          //   text: new Text({
+          //     text: size.toString(),
+          //     fill: new Fill({ color: '#fff' }),
+          //   }),
+          // })
           cache[size] = style
         }
         return [style]
@@ -714,10 +726,15 @@ export default {
     onUpdatePosition(coordinate) {
       this.deviceCoordinate = coordinate
     },
-    onMapPostCompose({vectorContext, frameState}) {
+    onMapDefLayerPostRender(evt) {
+      // animate the marker feature from vl-map default layer
       if (!this.$refs.marker || !this.$refs.marker.$feature) return
+
       const feature = this.$refs.marker.$feature
       if (!feature.getGeometry() || !feature.getStyle()) return
+
+      const frameState = evt.frameState
+      const vectorContext = getVectorContext(evt)
       const flashGeom = feature.getGeometry().clone()
       const duration = feature.get('duration')
       const elapsed = frameState.time - feature.get('start')
@@ -727,16 +744,15 @@ export default {
       const fillOpacity = easeInOut(0.5 - elapsedRatio)
       vectorContext.setStyle(createStyle({
         imageRadius: radius,
-        fillColor: [119, 170, 203, fillOpacity],
-        strokeColor: [119, 170, 203, opacity],
-        strokeWidth: 2 + opacity,
+        imageFillColor: [119, 170, 203, fillOpacity],
+        imageStrokeColor: [119, 170, 203, opacity],
+        imageStrokeWidth: 2 + opacity,
       }))
       vectorContext.drawGeometry(flashGeom)
-      vectorContext.setStyle(feature.getStyle()(feature)[0])
-      vectorContext.drawGeometry(feature.getGeometry())
       if (elapsed > duration) {
         feature.set('start', Date.now())
       }
+
       this.$refs.map.render()
     },
     onMapCreated(vm) {
@@ -775,9 +791,6 @@ export default {
     },
     showMapPanelTab(tab) {
       this.mapPanel.tab = tab
-      if (tab !== 'draw') {
-        this.drawType = undefined
-      }
     },
   },
 }
