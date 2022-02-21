@@ -1,245 +1,248 @@
 <template>
-  <VlMap
-    class="map"
-    ref="map"
-    data-projection="EPSG:4326"
-    @click="clickCoordinate = $event.coordinate"
-    @postcompose="onMapPostCompose"
-    @mounted="onMapMounted">
-    <VlView
-      ref="view"
-      :center.sync="center"
-      :zoom.sync="zoom"
-      :rotation.sync="rotation"/>
+  <div class="map">
+    <VlMap
+      v-show="mapVisible"
+      ref="map"
+      data-projection="EPSG:4326"
+      @click="clickCoordinate = $event.coordinate"
+      @created="onMapCreated"
+      @dl:postrender="onMapDefLayerPostRender">
+      <VlView
+        ref="view"
+        :center.sync="center"
+        :zoom.sync="zoom"
+        :rotation.sync="rotation"/>
 
-    <!-- geolocation -->
-    <VlGeoloc @update:position="onUpdatePosition">
-      <template slot-scope="geoloc">
-        <VlFeature
-          v-if="geoloc.position"
-          id="position-feature">
-          <VlGeomPoint :coordinates="geoloc.position"/>
-          <VlStyle>
-            <VlStyleIcon
-              src="./assets/marker.png"
-              :scale="0.4"
-              :anchor="[0.5, 1]"/>
-          </VlStyle>
-        </VlFeature>
-      </template>
-    </VlGeoloc>
-    <!--// geolocation -->
-
-    <!-- overlay marker with animation -->
-    <VlFeature
-      id="marker"
-      ref="marker"
-      :properties="{ start: Date.now(), duration: 2500 }">
-      <template slot-scope="feature">
-        <VlGeomPoint :coordinates="[-10, -10]"/>
-        <VlStyle>
-          <VlStyleIcon
-            src="./assets/flag.png"
-            :scale="0.5"
-            :anchor="[0.1, 0.95]"
-            :size="[128, 128]"/>
-        </VlStyle>
-        <!-- overlay binded to feature -->
-        <VlOverlay
-          v-if="feature.geometry"
-          :position="pointOnSurface(feature.geometry)"
-          :offset="[10, 10]">
-          <p class="is-light box content">
-            Always opened overlay for Feature ID <strong>{{ feature.id }}</strong>
-          </p>
-        </VlOverlay>
-      </template>
-    </VlFeature>
-    <!--// overlay marker -->
-
-    <!-- circle geom -->
-    <VlFeature id="circle">
-      <VlGeomCircle
-        :radius="1000000"
-        :coordinates="[0, 30]"/>
-    </VlFeature>
-    <!--// circle geom -->
-
-    <!-- base layers -->
-    <VlLayerTile
-      v-for="layer in baseLayers"
-      :key="layer.name"
-      :id="layer.name"
-      :visible="layer.visible">
-      <component
-        :is="'vl-source-' + layer.name"
-        v-bind="layer"/>
-    </VlLayerTile>
-    <!--// base layers -->
-
-    <!-- other layers from config -->
-    <component
-      v-for="layer in layers"
-      :is="layer.cmp"
-      :key="layer.id"
-      v-bind="layer">
-      <!-- add vl-source-* -->
-      <component
-        :is="layer.source.cmp"
-        v-bind="layer.source">
-        <!-- add static features to vl-source-vector if provided -->
-        <template v-if="layer.source.staticFeatures && layer.source.staticFeatures.length">
+      <!-- geolocation -->
+      <VlGeoloc @update:position="onUpdatePosition">
+        <template #default="geoloc">
           <VlFeature
-            v-for="feature in layer.source.staticFeatures" :key="feature.id"
-            :id="feature.id" :properties="feature.properties">
-            <component
-              :is="geometryTypeToCmpName(feature.geometry.type)"
-              v-bind="feature.geometry"/>
+            v-if="geoloc.position"
+            id="position-feature">
+            <VlGeomPoint :coordinates="geoloc.position"/>
+            <VlStyle>
+              <VlStyleIcon
+                src="../assets/marker.png"
+                :scale="0.4"
+                :anchor="[0.5, 1]"/>
+            </VlStyle>
           </VlFeature>
         </template>
+      </VlGeoloc>
+      <!--// geolocation -->
 
-        <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
+      <!-- overlay marker with animation -->
+      <VlFeature
+        id="marker"
+        ref="marker"
+        :properties="{ start: Date.now(), duration: 2500 }">
+        <template #default="feature">
+          <VlGeomPoint :coordinates="[-10, -10]"/>
+          <VlStyle>
+            <VlStyleIcon
+              src="../assets/flag.png"
+              :scale="0.5"
+              :anchor="[0.1, 0.95]"
+              :size="[128, 128]"/>
+          </VlStyle>
+          <!-- overlay binded to feature -->
+          <VlOverlay
+            v-if="feature.geometry"
+            :position="pointOnSurface(feature.geometry)"
+            :offset="[10, 10]">
+            <p class="is-light box content">
+              Always opened overlay for Feature ID <strong>{{ feature.id }}</strong>
+            </p>
+          </VlOverlay>
+        </template>
+      </VlFeature>
+      <!--// overlay marker -->
+
+      <!-- circle geom -->
+      <VlFeature id="circle">
+        <VlGeomCircle
+          :radius="1000000"
+          radius-projection="EPSG:3857"
+          :coordinates="[0, 30]"/>
+      </VlFeature>
+      <!--// circle geom -->
+
+      <!-- base layers -->
+      <VlLayerTile
+        v-for="layer in baseLayers"
+        :key="layer.name"
+        :id="layer.name"
+        :visible="layer.visible">
         <component
-          v-if="layer.source.source"
-          :is="layer.source.source.cmp"
-          v-bind="layer.source.source">
+          :is="'vl-source-' + layer.name"
+          v-bind="layer"/>
+      </VlLayerTile>
+      <!--// base layers -->
+
+      <!-- other layers from config -->
+      <component
+        v-for="layer in layers"
+        :is="layer.cmp"
+        :key="layer.id"
+        v-bind="layer">
+        <!-- add vl-source-* -->
+        <component
+          :is="layer.source.cmp"
+          v-bind="layer.source">
           <!-- add static features to vl-source-vector if provided -->
-          <template v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length">
+          <template v-if="layer.source.staticFeatures && layer.source.staticFeatures.length">
             <VlFeature
-              v-for="feature in layer.source.source.staticFeatures" :key="feature.id"
+              v-for="feature in layer.source.staticFeatures" :key="feature.id"
               :id="feature.id" :properties="feature.properties">
               <component
                 :is="geometryTypeToCmpName(feature.geometry.type)"
                 v-bind="feature.geometry"/>
             </VlFeature>
           </template>
+
+          <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
+          <component
+            v-if="layer.source.source"
+            :is="layer.source.source.cmp"
+            v-bind="layer.source.source">
+            <!-- add static features to vl-source-vector if provided -->
+            <template v-if="layer.source.source.staticFeatures && layer.source.source.staticFeatures.length">
+              <VlFeature
+                v-for="feature in layer.source.source.staticFeatures" :key="feature.id"
+                :id="feature.id" :properties="feature.properties">
+                <component
+                  :is="geometryTypeToCmpName(feature.geometry.type)"
+                  v-bind="feature.geometry"/>
+              </VlFeature>
+            </template>
+          </component>
         </component>
+        <!--// vl-source-* -->
+
+        <!-- add style components if provided -->
+        <!-- create vl-style or vl-style-func -->
+        <template v-if="layer.style">
+          <component
+            v-for="(style, i) in layer.style"
+            :key="i"
+            :is="style.cmp"
+            v-bind="style">
+            <!-- create inner style components: vl-style-circle, vl-style-icon, vl-style-fill, vl-style-stroke & etc -->
+            <template v-if="style.styles">
+              <component
+                v-for="(st, cmp) in style.styles"
+                :key="cmp"
+                :is="cmp"
+                v-bind="st">
+                <!-- vl-style-fill, vl-style-stroke if provided -->
+                <VlStyleFill
+                  v-if="st.fill"
+                  v-bind="st.fill"/>
+                <VlStyleStroke
+                  v-if="st.stroke"
+                  v-bind="st.stroke"/>
+              </component>
+            </template>
+          </component>
+        </template>
+        <!--// style -->
       </component>
-      <!--// vl-source-* -->
+      <!--// other layers -->
 
-      <!-- add style components if provided -->
-      <!-- create vl-style-box or vl-style-func -->
-      <template v-if="layer.style">
-        <component
-          v-for="(style, i) in layer.style"
-          :key="i"
-          :is="style.cmp"
-          v-bind="style">
-          <!-- create inner style components: vl-style-circle, vl-style-icon, vl-style-fill, vl-style-stroke & etc -->
-          <template v-if="style.styles">
-            <component
-              v-for="(st, cmp) in style.styles"
-              :key="cmp"
-              :is="cmp"
-              v-bind="st">
-              <!-- vl-style-fill, vl-style-stroke if provided -->
-              <VlStyleFill
-                v-if="st.fill"
-                v-bind="st.fill"/>
-              <VlStyleStroke
-                v-if="st.stroke"
-                v-bind="st.stroke"/>
-            </component>
-          </template>
-        </component>
-      </template>
-      <!--// style -->
-    </component>
-    <!--// other layers -->
+      <!-- draw target -->
+      <VlLayerVector
+        id="draw-pane"
+        :visible="mapPanel.tab === 'draw'">
+        <VlSourceVector
+          ident="draw-target"
+          :features.sync="drawnFeatures"/>
+      </VlLayerVector>
 
-    <!-- draw target -->
-    <VlLayerVector
-      v-if="mapPanel.tab === 'draw'"
-      id="draw-pane">
-      <VlSourceVector
-        ident="draw-target"
-        :features.sync="drawnFeatures"/>
-    </VlLayerVector>
-
-    <!-- interactions -->
-    <VlInteractionSelect
-      v-if="drawType == null"
-      :features.sync="selectedFeatures">
-      <template slot-scope="selection">
-        <!-- select styles -->
-        <VlStyle>
-          <VlStyleStroke
-            color="#423e9e"
-            :width="7" />
-          <VlStyleFill
-            :color="[254, 178, 76, 0.7]"/>
-          <VlStyleCircle :radius="5">
+      <!-- interactions -->
+      <VlInteractionSelect
+        :active="mapPanel.tab !== 'draw'"
+        :features.sync="selectedFeatures">
+        <template slot-scope="selection">
+          <!-- select styles -->
+          <VlStyle>
             <VlStyleStroke
               color="#423e9e"
               :width="7"/>
             <VlStyleFill
               :color="[254, 178, 76, 0.7]"/>
-          </VlStyleCircle>
-        </VlStyle>
-        <VlStyle :z-index="1">
-          <VlStyleStroke
-            color="#d43f45"
-            :width="2"/>
-          <VlStyleCircle :radius="5">
+            <VlStyleCircle :radius="5">
+              <VlStyleStroke
+                color="#423e9e"
+                :width="7"/>
+              <VlStyleFill
+                :color="[254, 178, 76, 0.7]"/>
+            </VlStyleCircle>
+          </VlStyle>
+          <VlStyle :z-index="1">
             <VlStyleStroke
               color="#d43f45"
               :width="2"/>
-          </VlStyleCircle>
-        </VlStyle>
-        <!--// select styles -->
+            <VlStyleCircle :radius="5">
+              <VlStyleStroke
+                color="#d43f45"
+                :width="2"/>
+            </VlStyleCircle>
+          </VlStyle>
+          <!--// select styles -->
 
-        <!-- selected feature popup -->
-        <VlOverlay
-          v-for="feature in select.features"
-          :key="feature.id"
-          :id="feature.id"
-          class="feature-popup"
-          :position="pointOnSurface(feature.geometry)"
-          :auto-pan="true"
-          :auto-pan-animation="{ duration: 300 }">
-          <template slot-scope="popup">
-            <section class="card">
-              <header class="card-header">
-                <p class="card-header-title">
-                  Feature ID {{ feature.id }}
-                </p>
-                <a class="card-header-icon" title="Close"
-                   @click="selectedFeatures = selectedFeatures.filter(f => f.id !== feature.id)">
-                  <b-icon icon="close"></b-icon>
-                </a>
-              </header>
-              <div class="card-content">
-                <div class="content">
-                  <p>
-                    Overlay popup content for Feature with ID <strong>{{ feature.id }}</strong>
+          <!-- selected feature popup -->
+          <VlOverlay
+            v-for="feature in selection.features"
+            :key="feature.id"
+            :id="feature.id"
+            class="feature-popup"
+            :position="pointOnSurface(feature.geometry)"
+            :auto-pan="true"
+            :auto-pan-animation="{ duration: 300 }">
+            <template #default="popup">
+              <section class="card">
+                <header class="card-header">
+                  <p class="card-header-title">
+                    Feature ID {{ feature.id }}
                   </p>
-                  <p>
-                    Popup: {{ JSON.stringify(popup) }}
-                  </p>
-                  <p>
-                    Feature: {{ JSON.stringify({ id: feature.id, properties: feature.properties }) }}
-                  </p>
+                  <a class="card-header-icon" title="Close"
+                     @click="selectedFeatures = selectedFeatures.filter(f => f.id !== feature.id)">
+                    <b-icon icon="close"></b-icon>
+                  </a>
+                </header>
+                <div class="card-content">
+                  <div class="content">
+                    <p>
+                      Overlay popup content for Feature with ID <strong>{{ feature.id }}</strong>
+                    </p>
+                    <p>
+                      Popup: {{ JSON.stringify(popup) }}
+                    </p>
+                    <p>
+                      Feature: {{ JSON.stringify({id: feature.id, properties: feature.properties}) }}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </section>
-          </template>
-        </VlOverlay>
-        <!--// selected popup -->
-      </template>
-    </VlInteractionSelect>
+              </section>
+            </template>
+          </VlOverlay>
+          <!--// selected popup -->
+        </template>
+      </VlInteractionSelect>
 
-    <VlInteractionDraw
-      v-if="mapPanel.tab === 'draw' && drawType"
-      source="draw-target"
-      :type="drawType"/>
-    <VlInteractionModify
-      v-if="mapPanel.tab === 'draw'"
-      source="draw-target"/>
-    <VlInteractionSnap
-      v-if="mapPanel.tab === 'draw'"
-      source="draw-target"
-      :priority="10"/>
-    <!--// interactions -->
+      <VlInteractionDraw
+        :active="mapPanel.tab === 'draw'"
+        source="draw-target"
+        :type="drawType"/>
+      <VlInteractionModify
+        :active="mapPanel.tab === 'draw'"
+        source="draw-target"/>
+      <VlInteractionSnap
+        :active="mapPanel.tab === 'draw'"
+        source="draw-target"
+        :priority="10"/>
+      <!--// interactions -->
+    </VlMap>
 
     <!-- map panel, controls -->
     <div class="map-panel">
@@ -320,16 +323,18 @@
       </div>
     </div>
     <!--// base layers -->
-  </VlMap>
+  </div>
 </template>
 
 <script>
-import { kebabCase, range, random, camelCase } from 'lodash'
-import pacmanFeaturesCollection from './assets/pacman.geojson'
-import {ScaleLine, FullScreen, OverviewMap, ZoomSlider} from 'ol/control'
-import {Projection, addProjection} from 'ol/proj'
+import {camelCase, kebabCase, random, range} from 'lodash'
+import pacmanFeaturesCollection from '../assets/pacman.geojson'
+import {FullScreen, ScaleLine, ZoomSlider} from 'ol/control'
+import {addProjection, Projection} from 'ol/proj'
 import {MultiPoint} from 'ol/geom'
-import {findPointOnSurface, createStyle} from 'vuelayers/dist/ol-ext'
+import {bbox} from 'ol/loadingstrategy'
+import {getVectorContext} from 'ol/render'
+import {createStyle, findPointOnSurface} from 'vuelayers/dist/ol-ext'
 
 // Custom projection for static Image layer
 let x = 1024 * 10000
@@ -388,7 +393,7 @@ export default {
           icon: 'times',
         },
       ],
-      drawType: undefined,
+      drawType: 'point',
       drawnFeatures: [],
       // base layers
       baseLayers: [
@@ -396,11 +401,6 @@ export default {
           name: 'osm',
           title: 'OpenStreetMap',
           visible: true,
-        },
-        {
-          name: 'sputnik',
-          title: 'Sputnik Maps',
-          visible: false,
         },
         // needs paid plan to get key
         // {
@@ -422,9 +422,8 @@ export default {
         {
           id: 'pacman',
           title: 'Pacman',
-          cmp: 'vl-layer-vector',
+          cmp: 'vl-layer-vector-image',
           visible: false,
-          renderMode: 'image',
           source: {
             cmp: 'vl-source-vector',
             staticFeatures: pacmanFeaturesCollection.features,
@@ -432,7 +431,7 @@ export default {
           style: [
             {
               cmp: 'vl-style-func',
-              factory: this.pacmanStyleFunc,
+              function: this.pacmanStyleFunc(),
             },
           ],
         },
@@ -456,6 +455,7 @@ export default {
                   type: 'Circle',
                   coordinates: coordinate,
                   radius: random(Math.pow(10, 5), Math.pow(10, 6)),
+                  radiusProjection: 'EPSG:3857',
                 },
               }
             }),
@@ -474,7 +474,7 @@ export default {
           },
           style: [
             {
-              cmp: 'vl-style-box',
+              cmp: 'vl-style',
               styles: {
                 'vl-style-fill': {
                   color: [255, 255, 255, 0.5],
@@ -504,7 +504,7 @@ export default {
           cmp: 'vl-layer-tile',
           visible: false,
           source: {
-            cmp: 'vl-source-wms',
+            cmp: 'vl-source-tile-wms',
             url: 'https://ahocevar.com/geoserver/wms',
             layers: 'topp:states',
             extParams: {TILED: true},
@@ -530,8 +530,7 @@ export default {
         {
           id: 'cluster',
           title: 'Cluster',
-          cmp: 'vl-layer-vector',
-          renderMode: 'image',
+          cmp: 'vl-layer-vector-image',
           visible: false,
           // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
           source: {
@@ -560,16 +559,15 @@ export default {
           style: [
             {
               cmp: 'vl-style-func',
-              factory: this.clusterStyleFunc,
+              function: this.clusterStyleFunc(),
             },
           ],
         },
         {
           id: 'wfs',
           title: 'WFS (Canada water areas)',
-          cmp: 'vl-layer-vector',
+          cmp: 'vl-layer-vector-image',
           visible: false,
-          renderMode: 'image',
           source: {
             cmp: 'vl-source-vector',
             features: [],
@@ -579,9 +577,7 @@ export default {
                 'outputFormat=application/json&srsname=' + projection + '&' +
                 'bbox=' + extent.join(',') + ',' + projection
             },
-            strategyFactory() {
-              return loadingBBox
-            },
+            loadingStrategy: bbox,
           },
         },
         {
@@ -593,8 +589,8 @@ export default {
             cmp: 'vl-source-image-static',
             projection: customProj.getCode(),
             url: 'https://imgs.xkcd.com/comics/online_communities.png',
-            size: [1024, 968],
-            extent: imageExtent,
+            imageSize: [1024, 968],
+            imageExtent: imageExtent,
           },
         },
         {
@@ -620,7 +616,7 @@ export default {
           },
           style: [
             {
-              cmp: 'vl-style-box',
+              cmp: 'vl-style',
               styles: {
                 'vl-style-stroke': {
                   width: 2,
@@ -701,11 +697,24 @@ export default {
         if (!style) {
           style = createStyle({
             imageRadius: 10,
-            strokeColor: '#fff',
-            fillColor: '#3399cc',
+            imageStrokeColor: '#fff',
+            imageFillColor: '#3399cc',
             text: size.toString(),
             textFillColor: '#fff',
           })
+          // with OpenLayers native API
+          // import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
+          // style = new Style({
+          //   image: new Circle({
+          //     radius: 10,
+          //     fill: new Fill({ color: '#3399cc' }),
+          //     stroke: new Stroke({ color: '#fff' }),
+          //   }),
+          //   text: new Text({
+          //     text: size.toString(),
+          //     fill: new Fill({ color: '#fff' }),
+          //   }),
+          // })
           cache[size] = style
         }
         return [style]
@@ -717,10 +726,15 @@ export default {
     onUpdatePosition(coordinate) {
       this.deviceCoordinate = coordinate
     },
-    onMapPostCompose({vectorContext, frameState}) {
+    onMapDefLayerPostRender(evt) {
+      // animate the marker feature from vl-map default layer
       if (!this.$refs.marker || !this.$refs.marker.$feature) return
+
       const feature = this.$refs.marker.$feature
       if (!feature.getGeometry() || !feature.getStyle()) return
+
+      const frameState = evt.frameState
+      const vectorContext = getVectorContext(evt)
       const flashGeom = feature.getGeometry().clone()
       const duration = feature.get('duration')
       const elapsed = frameState.time - feature.get('start')
@@ -730,27 +744,28 @@ export default {
       const fillOpacity = easeInOut(0.5 - elapsedRatio)
       vectorContext.setStyle(createStyle({
         imageRadius: radius,
-        fillColor: [119, 170, 203, fillOpacity],
-        strokeColor: [119, 170, 203, opacity],
-        strokeWidth: 2 + opacity,
+        imageFillColor: [119, 170, 203, fillOpacity],
+        imageStrokeColor: [119, 170, 203, opacity],
+        imageStrokeWidth: 2 + opacity,
       }))
       vectorContext.drawGeometry(flashGeom)
-      vectorContext.setStyle(feature.getStyle()(feature)[0])
-      vectorContext.drawGeometry(feature.getGeometry())
       if (elapsed > duration) {
         feature.set('start', Date.now())
       }
+
       this.$refs.map.render()
     },
-    onMapMounted() {
+    onMapCreated(vm) {
       // now ol.Map instance is ready and we can work with it directly
-      this.$refs.map.$map.getControls().extend([
+      console.log('map vm', vm)
+      vm.addControls([
         new ScaleLine(),
         new FullScreen(),
-        new OverviewMap({
-          collapsed: false,
-          collapsible: true,
-        }),
+        // TODO need to provide some base layers
+        // new OverviewMap({
+        //   collapsed: false,
+        //   collapsible: true,
+        // }),
         new ZoomSlider(),
       ])
     },
@@ -776,9 +791,6 @@ export default {
     },
     showMapPanelTab(tab) {
       this.mapPanel.tab = tab
-      if (tab !== 'draw') {
-        this.drawType = undefined
-      }
     },
   },
 }
@@ -791,6 +803,10 @@ export default {
   position: relative;
   width: 100%;
   height: 100%;
+
+  .vl-map {
+    position: relative;
+  }
 }
 
 .map-panel {
