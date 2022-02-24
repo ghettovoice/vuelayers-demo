@@ -89,17 +89,6 @@
         <component
           :is="layer.source.cmp"
           v-bind="layer.source">
-          <!-- add static features to vl-source-vector if provided -->
-          <template v-if="layer.source.staticFeatures && layer.source.staticFeatures.length">
-            <VlFeature
-              v-for="feature in layer.source.staticFeatures" :key="feature.id"
-              :id="feature.id" :properties="feature.properties">
-              <component
-                :is="geometryTypeToCmpName(feature.geometry.type)"
-                v-bind="feature.geometry"/>
-            </VlFeature>
-          </template>
-
           <!-- add inner source if provided (like vl-source-vector inside vl-source-cluster) -->
           <component
             v-if="layer.source.source"
@@ -426,7 +415,7 @@ export default {
           visible: false,
           source: {
             cmp: 'vl-source-vector',
-            staticFeatures: pacmanFeaturesCollection.features,
+            features: pacmanFeaturesCollection.features,
           },
           style: [
             {
@@ -443,7 +432,7 @@ export default {
           visible: false,
           source: {
             cmp: 'vl-source-vector',
-            staticFeatures: range(0, 100).map(i => {
+            features: range(0, 100).map(i => {
               let coordinate = [
                 random(-50, 50),
                 random(-50, 50),
